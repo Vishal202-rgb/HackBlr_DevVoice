@@ -35,16 +35,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="flex flex-col min-h-screen bg-gray-950 text-white">
-
-        {/* Main Content */}
-        <main className="flex-1">
-          {children}
-        </main>
-
-        {/* Footer */}
+      <body className="flex flex-col min-h-screen bg-gradient-to-br from-black via-gray-950 to-gray-900 text-white overflow-x-hidden">
+        <main className="flex-1">{children}</main>
         <Footer />
-
       </body>
     </html>
   );

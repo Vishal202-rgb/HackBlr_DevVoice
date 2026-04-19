@@ -306,152 +306,104 @@ export function DevVoiceConsole() {
   };
 
   return (
-    <div className="pb-24">
-      <section className="glass rounded-2xl p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold text-white">Developer Voice Console</h1>
-            <p className="mt-1 text-sm text-slate-300">
-              Explain code, debug issues, summarize docs, and generate fixes with contextual recall.
-            </p>
-          </div>
-          <StatusChips listening={listening} thinking={thinking} speaking={speaking} />
+  <div className="pb-24 space-y-6">
+
+    {/* HEADER */}
+    <section className="glass rounded-2xl p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-white">
+            Developer Voice Console
+          </h1>
+          <p className="mt-1 text-sm text-gray-400">
+            Debug, analyze & interact with AI using voice + chat
+          </p>
         </div>
+        <StatusChips listening={listening} thinking={thinking} speaking={speaking} />
+      </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={resumeLastSession}
-            className="rounded-xl border border-ink-700 bg-ink-900/80 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-neon-cyan/60 hover:text-white"
-          >
-            Resume Last Session
-          </button>
-          <button
-            type="button"
-            onClick={startNewSession}
-            className="rounded-xl border border-ink-700 bg-ink-900/80 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-neon-mint/60 hover:text-white"
-          >
-            Start New Session
-          </button>
-          <button
-            type="button"
-            onClick={clearLocalData}
-            className="rounded-xl border border-red-900/70 bg-red-950/40 px-3 py-2 text-xs font-medium text-red-200 transition hover:border-red-700 hover:text-red-100"
-          >
-            Clear Local Sessions ({localSessionCount})
-          </button>
-        </div>
+      {/* ACTION BUTTONS */}
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button onClick={resumeLastSession} className="btn-secondary">
+          Resume
+        </button>
+        <button onClick={startNewSession} className="btn-secondary">
+          New
+        </button>
+        <button onClick={clearLocalData} className="btn-danger">
+          Clear ({localSessionCount})
+        </button>
+      </div>
+    </section>
 
-        <div className="mt-4 rounded-2xl border border-ink-700 bg-ink-950/50 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-slate-400">Saved Sessions</p>
-              <p className="mt-1 text-sm text-slate-200">{selectedSessionLabel}</p>
-            </div>
-            <button
-              type="button"
-              onClick={refreshSavedSessions}
-              className="rounded-lg border border-ink-700 px-3 py-2 text-xs text-slate-300 transition hover:border-neon-cyan/60 hover:text-white"
-            >
-              Refresh List
-            </button>
-          </div>
-          <div className="mt-3 flex flex-col gap-3">
-            <input
-              value={sessionFilter}
-              onChange={(event) => setSessionFilter(event.target.value)}
-              placeholder="Filter sessions by title or content..."
-              className="w-full rounded-xl border border-ink-700 bg-ink-900/80 px-4 py-2 text-sm text-slate-100 outline-none focus:border-neon-cyan/50"
-            />
-            <div className="flex flex-wrap gap-2">
-              {filteredSessions.length === 0 ? (
-                <span className="text-sm text-slate-400">No matching sessions.</span>
-              ) : (
-                filteredSessions.map((session) => (
-                  <div
-                    key={session.id}
-                    className={`flex items-center gap-2 rounded-full border px-2 py-2 ${
-                      session.id === sessionId
-                        ? "border-neon-cyan bg-neon-cyan/15"
-                        : "border-ink-700 bg-ink-900/80"
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => selectSession(session)}
-                      className={`rounded-full px-2 py-0.5 text-xs transition ${
-                        session.id === sessionId
-                          ? "text-neon-cyan"
-                          : "text-slate-300 hover:text-white"
-                      }`}
-                    >
-                      {session.title}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => duplicateSavedSession(session.id)}
-                      className="rounded-full border border-amber-700/60 px-2 py-0.5 text-[10px] uppercase tracking-wide text-amber-200 transition hover:border-amber-500 hover:text-amber-100"
-                      aria-label={`Duplicate session ${session.title}`}
-                    >
-                      Duplicate
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => deleteSavedSession(session.id)}
-                      className="rounded-full border border-red-900/60 px-2 py-0.5 text-[10px] uppercase tracking-wide text-red-200 transition hover:border-red-700 hover:text-red-100"
-                      aria-label={`Delete session ${session.title}`}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-
-        <form onSubmit={onSubmit} className="mt-5 flex flex-col gap-3 sm:flex-row">
-          <input
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            placeholder="Ask a technical question or paste logs/stack trace..."
-            className="w-full rounded-xl border border-ink-700 bg-ink-900/80 px-4 py-3 text-sm text-slate-100 outline-none focus:border-neon-cyan/50"
-          />
-          <button
-            type="submit"
-            disabled={thinking}
-            className="rounded-xl bg-neon-cyan px-5 py-3 font-medium text-ink-950 transition hover:bg-cyan-300 disabled:opacity-60"
-          >
-            {thinking ? "Thinking..." : "Send"}
-          </button>
-        </form>
-
-        {error ? <p className="mt-3 text-sm text-red-300">{error}</p> : null}
-      </section>
-
-      <section className="mt-6 grid gap-4 lg:grid-cols-[1.35fr,1fr]">
-        <TranscriptPanel turns={turns} />
-        <div className="space-y-4">
-          <ContextCards chunks={contexts} />
-          <SuggestedActions actions={actions} />
-        </div>
-      </section>
-
-      <FloatingVoicePanel
-        transcriptDraft={transcriptDraft}
-        listening={listening}
-        continuous={continuous}
-        onStartPushToTalk={startListening}
-        onStopListening={stopListening}
-        onToggleContinuous={() => setContinuous((prev) => !prev)}
+    {/* SESSION PANEL */}
+    <section className="glass rounded-2xl p-4">
+      <input
+        value={sessionFilter}
+        onChange={(e) => setSessionFilter(e.target.value)}
+        placeholder="Search sessions..."
+        className="input"
       />
 
-      {latestAssistantText ? (
-        <section className="code-frame mt-6 rounded-2xl p-5">
-          <p className="text-xs uppercase tracking-wide text-slate-400">Latest Debug Result</p>
-          <pre className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-200">{latestAssistantText}</pre>
-        </section>
-      ) : null}
-    </div>
-  );
+      <div className="flex flex-wrap gap-2 mt-3">
+        {filteredSessions.map((session) => (
+          <div key={session.id} className="session-pill">
+            <button onClick={() => selectSession(session)}>
+              {session.title}
+            </button>
+            <button onClick={() => duplicateSavedSession(session.id)}>+</button>
+            <button onClick={() => deleteSavedSession(session.id)}>×</button>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    {/* CHAT INPUT */}
+    <form onSubmit={onSubmit} className="glass p-4 flex gap-3 rounded-2xl">
+      <input
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        className="input"
+        placeholder="Ask something..."
+      />
+      <button className="btn-primary">
+        {thinking ? "..." : "Send"}
+      </button>
+    </form>
+
+    {error && <p className="text-red-400">{error}</p>}
+
+    {/* MAIN GRID */}
+    <section className="grid lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2">
+        <TranscriptPanel turns={turns} />
+      </div>
+
+      <div className="space-y-4">
+        <ContextCards chunks={contexts} />
+        <SuggestedActions actions={actions} />
+      </div>
+    </section>
+
+    {/* VOICE */}
+    <FloatingVoicePanel
+      transcriptDraft={transcriptDraft}
+      listening={listening}
+      continuous={continuous}
+      onStartPushToTalk={startListening}
+      onStopListening={stopListening}
+      onToggleContinuous={() => setContinuous((prev) => !prev)}
+    />
+
+    {/* RESULT */}
+    {latestAssistantText && (
+      <section className="glass p-5 rounded-2xl">
+        <p className="text-xs text-gray-400">Latest Output</p>
+        <pre className="mt-2 text-sm text-gray-200 whitespace-pre-wrap">
+          {latestAssistantText}
+        </pre>
+      </section>
+    )}
+  </div>
+);
 }
