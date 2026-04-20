@@ -322,28 +322,25 @@ export function DevVoiceConsole() {
         <StatusChips listening={listening} thinking={thinking} speaking={speaking} />
       </div>
 
-      {/* ACTION BUTTONS */}
       <div className="mt-4 flex flex-wrap gap-2">
-        <button onClick={resumeLastSession} className="btn-secondary">
-          Resume
-        </button>
-        <button onClick={startNewSession} className="btn-secondary">
-          New
-        </button>
+        <button onClick={resumeLastSession} className="btn-secondary">Resume</button>
+        <button onClick={startNewSession} className="btn-secondary">New</button>
         <button onClick={clearLocalData} className="btn-danger">
           Clear ({localSessionCount})
         </button>
       </div>
     </section>
 
-    {/* SESSION PANEL */}
+    {/* 🔍 SESSION SEARCH */}
     <section className="glass rounded-2xl p-4">
-      <input
-        value={sessionFilter}
-        onChange={(e) => setSessionFilter(e.target.value)}
-        placeholder="Search sessions..."
-        className="input"
-      />
+      <div className="bg-[#0f172a] border border-gray-700 rounded-xl px-4 py-2">
+        <input
+          value={sessionFilter}
+          onChange={(e) => setSessionFilter(e.target.value)}
+          placeholder="Search sessions..."
+          className="w-full bg-transparent outline-none text-white placeholder-gray-400"
+        />
+      </div>
 
       <div className="flex flex-wrap gap-2 mt-3">
         {filteredSessions.map((session) => (
@@ -358,17 +355,28 @@ export function DevVoiceConsole() {
       </div>
     </section>
 
-    {/* CHAT INPUT */}
-    <form onSubmit={onSubmit} className="glass p-4 flex gap-3 rounded-2xl">
-      <input
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        className="input"
-        placeholder="Ask something..."
-      />
-      <button className="btn-primary">
-        {thinking ? "..." : "Send"}
-      </button>
+    {/* 💬 CHAT INPUT (UPGRADED) */}
+    <form onSubmit={onSubmit} className="glass p-3 rounded-2xl">
+      <div className="flex gap-3 items-center bg-[#020617] border border-gray-700 rounded-xl px-4 py-3">
+
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Ask about contract, risk, clause..."
+          className="flex-1 bg-transparent outline-none text-white placeholder-gray-400"
+        />
+
+        <button
+          type="submit"
+          className="relative group bg-cyan-400 text-black px-4 py-2 rounded-xl font-semibold transition"
+        >
+          <span className="relative z-10">
+            {thinking ? "..." : "Send"}
+          </span>
+
+          <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 rounded-xl transition" />
+        </button>
+      </div>
     </form>
 
     {error && <p className="text-red-400">{error}</p>}
