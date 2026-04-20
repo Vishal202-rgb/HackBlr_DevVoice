@@ -2,123 +2,133 @@
 import { ChatTurn, RetrievedChunk } from "@/lib/types";
 import { mockDeveloperAnswer } from "@/lib/mock";
 
+/**
+ * 🔥 STRONG PROMPT BUILDER
+ */
 function buildPrompt(params: {
   message: string;
   history: ChatTurn[];
   context: RetrievedChunk[];
-}): string {
+}) {
   const historyText = params.history
     .slice(-6)
-    .map((turn) => `${turn.role.toUpperCase()}: ${turn.content}`)
+    .map((t) => `${t.role}: ${t.content}`)
     .join("\n");
 
   const contextText = params.context
-    .map((chunk, index) => `[${index + 1}] (${chunk.source}) ${chunk.text}`)
-    .join("\n\n");
+    .slice(0, config.maxContextChunks)
+    .map((c, i) => `[${i + 1}] ${c.text}`)
+    .join("\n");
 
-  return [
-    "You are DevVoice, a practical developer assistant.",
-    "Answer in a concise, technical, and action-oriented way.",
-    "If debugging, include probable root cause and verification steps.",
-    "If giving commands, prefer safe and explicit commands.",
-    "",
-    "Conversation history:",
-    historyText || "No prior turns.",
-    "",
-    "Retrieved context:",
-    contextText || "No retrieved context.",
-    "",
-    `User question: ${params.message}`,
-  ].join("\n");
+  return `
+You are DevVoice — an expert AI assistant for developers AND legal contract analysis.
+
+Rules:
+- Be concise, structured, and practical
+- If coding → explain + fix + example
+- If legal → identify risks + clauses + suggestions
+- Always return structured output
+
+Format:
+SUMMARY:
+...
+RISKS:
+- ...
+SUGGESTIONS:
+- ...
+
+Conversation:
+${historyText || "none"}
+
+Context:
+${contextText || "none"}
+
+User:
+${params.message}
+`;
 }
 
-type ChatCompletionsPayload = {
+type OpenAIResponse = {
   choices?: Array<{ message?: { content?: string } }>;
-  error?: { message?: string; type?: string };
+  error?: { message?: string };
 };
 
-async function callOpenAi(params: {
+async function callOpenAI(params: {
   message: string;
   history: ChatTurn[];
   context: RetrievedChunk[];
-}): Promise<string> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20_000);
+}) {
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${config.openAiApiKey}`,
+    },
+    body: JSON.stringify({
+      model: config.llmModel,
+      temperature: 0.2,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a highly intelligent AI for coding + legal reasoning.",
+        },
+        {
+          role: "user",
+          content: buildPrompt(params),
+        },
+      ],
+    }),
+  });
 
-  try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${config.openAiApiKey}`,
-      },
-      body: JSON.stringify({
-        model: config.llmModel,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are DevVoice. Provide developer-friendly explanations, actionable debug steps, and short command snippets when relevant.",
-          },
-          {
-            role: "user",
-            content: buildPrompt(params),
-          },
-        ],
-        temperature: 0.2,
-      }),
-      signal: controller.signal,
-    });
+  const data = (await res.json()) as OpenAIResponse;
 
-    const payload = (await response.json()) as ChatCompletionsPayload;
-
-    if (!response.ok) {
-      const errorMessage = payload.error?.message ?? "Unknown provider error";
-      throw new Error(`OpenAI ${response.status}: ${errorMessage}`);
-    }
-
-    const answer = payload.choices?.[0]?.message?.content?.trim();
-    if (!answer) {
-      throw new Error("OpenAI returned an empty completion.");
-    }
-
-    return answer;
-  } finally {
-    clearTimeout(timeout);
+  if (!res.ok) {
+    throw new Error(data.error?.message || "OpenAI error");
   }
+
+  return data.choices?.[0]?.message?.content || "";
 }
 
+/**
+ * 🚀 MAIN FUNCTION
+ */
 export async function generateDeveloperResponse(params: {
   message: string;
   history: ChatTurn[];
   context: RetrievedChunk[];
 }): Promise<{ answer: string; suggestions: string[] }> {
+console.log("ENV MOCK_MODE:", process.env.MOCK_MODE);
+console.log("ENV OPENAI KEY EXISTS:", !!process.env.OPENAI_API_KEY);
+
   if (!hasExternalLlmConfig()) {
-    return mockDeveloperAnswer(params.message);
-  }
+  return mockDeveloperAnswer(params.message);
+}
 
   try {
-    const answer = await callOpenAi(params);
+    const answer = await callOpenAI(params);
+
     return {
       answer,
       suggestions: [
-        "Ask follow-up: explain the root cause with a minimal reproducible example.",
-        "Ask for exact terminal commands to validate the fix.",
-        "Request a patch-style code change suggestion.",
+        "Explain deeper with example",
+        "Give step-by-step fix",
+        "Show real-world use case",
       ],
     };
-  } catch (error) {
-    const fallback = mockDeveloperAnswer(params.message);
-    const reason = error instanceof Error ? error.message : "Unknown provider failure";
+  } catch (err) {
+    console.error("❌ OpenAI failed:", err);
 
-    console.error(`[llm] Falling back to mock response: ${reason}`);
+    const fallback = mockDeveloperAnswer(params.message);
 
     return {
-      answer: `${fallback.answer}\n\nNote: External LLM request failed, so DevVoice used safe fallback mode. Reason: ${reason}`,
+      answer:
+        fallback.answer +
+        "\n\n⚠️ AI fallback triggered. Check API key / billing.",
       suggestions: [
-        "Verify OPENAI_API_KEY is valid and has billing enabled.",
-        "Set LLM_MODEL to a model your account can access (for example gpt-4o-mini).",
-        "Check /api/status and confirm runtimeMode is external with mockMode=false.",
+        "Check API key",
+        "Verify billing",
+        "Try different model",
       ],
     };
   }
